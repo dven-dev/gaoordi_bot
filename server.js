@@ -1,36 +1,25 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const bot = require('./bot');
-
 require('dotenv').config();
+const express = require('express');
+const bot = require('./bot');
+const Subscriber = require('./models/Subscriber');
+const Scenario = require('./models/Scenario');
 
 const app = express();
 app.use(express.json());
 
-// Подключение к MongoDB
-mongoose.connect(process.env.MONGO_URI);
-
-// Модель подписчиков
-const Subscriber = mongoose.model('Subscriber');
-
-// 📋 Список подписчиков
+// Список подписчиков
 app.get('/admin/subscribers', async (req, res) => {
   const subs = await Subscriber.find();
   res.json(subs);
 });
 
-// 📊 Примитивная аналитика
+// Примитивная аналитика
 app.get('/admin/stats', async (req, res) => {
   const count = await Subscriber.countDocuments();
   res.json({ totalSubscribers: count });
 });
 
-// 🗺️ Редактор сценариев (храним в базе)
-const Scenario = mongoose.model('Scenario', new mongoose.Schema({
-  name: String,
-  steps: Array
-}));
-
+// Сценарии
 app.get('/admin/scenarios', async (req, res) => {
   res.json(await Scenario.find());
 });
@@ -42,6 +31,5 @@ app.post('/admin/scenarios', async (req, res) => {
 });
 
 // Запуск бота и сервера
-bot.launch();
-app.listen(3000, () => console.log('Админка: http://localhost:3000'));
-
+bot.launch().then(() => console.log('🤖 Bot started'));
+app.listen(process.env.PORT, () => console.log(`🌍 Admin panel: http://localhost:${process.env.PORT}`));
