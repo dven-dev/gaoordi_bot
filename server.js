@@ -32,4 +32,6 @@ app.post('/admin/scenarios', async (req, res) => {
 
 // Запуск бота и сервера
 bot.launch().then(() => console.log('🤖 Bot started'));
-app.listen(process.env.PORT, () => console.log(`🌍 Admin panel: http://localhost:${process.env.PORT}`));
+app.listen(process.env.PORT, '0.0.0.0', () => {
+  console.log(`🌍 Admin panel: http://<SERVER_IP>:${process.env.PORT}`);
+});
