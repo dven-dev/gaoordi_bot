@@ -1,17 +1,11 @@
 require('dotenv').config();
 const { Telegraf, Markup } = require('telegraf');
-const mongoose = require('mongoose');
 
 const Subscriber = require('./models/Subscriber');
 const Scenario = require('./models/Scenario');
 const UserProgress = require('./models/UserProgress');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
-
-// Подключение MongoDB
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ MongoDB connected'))
-  .catch(err => console.error('❌ MongoDB connection error:', err));
 
 // /start — подписка и выбор сценария
 bot.start(async (ctx) => {
@@ -37,7 +31,6 @@ bot.action(/scenario_(.+)/, async (ctx) => {
   const scenario = await Scenario.findById(scenarioId);
   if (!scenario) return ctx.reply('Сценарий не найден.');
 
-  // Сохраняем прогресс пользователя
   await UserProgress.findOneAndUpdate(
     { userId: ctx.from.id },
     { currentScenario: scenario._id, currentStep: 0 },
@@ -48,7 +41,7 @@ bot.action(/scenario_(.+)/, async (ctx) => {
   ctx.reply(`Шаг 1: ${scenario.steps[0]}`);
 });
 
-// Обработка ответа пользователя и переход к следующему шагу
+// Обработка текста пользователя и переход к следующему шагу
 bot.on('text', async (ctx) => {
   const progress = await UserProgress.findOne({ userId: ctx.from.id }).populate('currentScenario');
   if (!progress || !progress.currentScenario) return;
@@ -56,10 +49,8 @@ bot.on('text', async (ctx) => {
   const stepIndex = progress.currentStep;
   const steps = progress.currentScenario.steps;
 
-  // Можно здесь обработать текст пользователя, если нужно
   ctx.reply(`Вы ответили: ${ctx.message.text}`);
 
-  // Переходим к следующему шагу
   const nextStep = stepIndex + 1;
   if (nextStep < steps.length) {
     await UserProgress.findOneAndUpdate(
@@ -68,7 +59,6 @@ bot.on('text', async (ctx) => {
     );
     ctx.reply(`Шаг ${nextStep + 1}: ${steps[nextStep]}`);
   } else {
-    // Сценарий завершён
     await UserProgress.findOneAndUpdate(
       { userId: ctx.from.id },
       { currentScenario: null, currentStep: 0 }
