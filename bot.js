@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Telegraf, Markup } = require('telegraf');
+const { Telegraf } = require('telegraf');
 const mongoose = require('mongoose');
 
 const Subscriber = require('./models/Subscriber');
@@ -42,7 +42,7 @@ bot.start(async (ctx) => {
   // приветственное сообщение
   await ctx.reply('Добро пожаловать в бота ГАООРДИ!');
 
-  // встроенное меню слева (команды)
+  // сразу устанавливаем встроенное меню слева
   await bot.telegram.setMyCommands([
     { command: 'advent', description: 'Адвент-календарь' },
     { command: 'stories', description: 'Истории' },
@@ -52,17 +52,20 @@ bot.start(async (ctx) => {
     { command: 'contacts', description: 'Контакты' }
   ]);
 
-  // reply-клавиатура снизу
-  const mainKeyboard = Markup.keyboard([
-    ['Адвент-календарь'],
-    ['Истории'],
-    ['Наши проекты'],
-    ['Ежемесячное пожертвование'],
-    ['О нас'],
-    ['Контакты']
-  ]).resize();
-
-  await ctx.reply('Выберите пункт меню:', mainKeyboard);
+  // нижняя клавиатура
+  await ctx.reply('Выберите пункт меню ниже:', {
+    reply_markup: {
+      keyboard: [
+        ['Адвент-календарь'],
+        ['Истории'],
+        ['Наши проекты'],
+        ['Ежемесячное пожертвование'],
+        ['О нас'],
+        ['Контакты']
+      ],
+      resize_keyboard: true
+    }
+  });
 });
 
 // подключаем сценарии
