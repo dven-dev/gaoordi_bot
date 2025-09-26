@@ -32,50 +32,39 @@ bot.start(async (ctx) => {
     { upsert: true }
   );
 
-  // Приветственное сообщение с кнопкой меню
+  // Приветственное сообщение с меню
   await ctx.reply(
-    `👋 Привет, ${first_name}!\nДобро пожаловать в наш бот!`,
+    `👋 Привет, ${first_name}! Добро пожаловать в наш бот!`,
     Markup.keyboard([
-      ['📋 Меню']
-    ])
-    .resize()
+      ['Адвент-календарь', 'Истории'],
+      ['Наши проекты', 'Ежемесячное пожертвование'],
+      ['О нас', 'Контакты']
+    ]).resize()
   );
-
-  // Показываем сценарии
-  showScenarios(ctx);
 });
 
-// --- Функция показа сценариев ---
-async function showScenarios(ctx) {
-  const scenarios = await Scenario.find();
-  if (scenarios.length === 0) return ctx.reply('Сценариев пока нет.');
-
-  const buttons = scenarios.map(s => [Markup.button.callback(s.name, `scenario_${s._id}`)]);
-  ctx.reply('Выберите сценарий:', Markup.inlineKeyboard(buttons));
-}
-
-// --- Обработка кнопки "Меню" ---
-bot.hears('📋 Меню', async (ctx) => {
-  await showScenarios(ctx);
-});
-
-// --- Выбор сценария ---
-bot.action(/scenario_(.+)/, async (ctx) => {
-  const scenarioId = ctx.match[1];
-  const scenario = await Scenario.findById(scenarioId);
-  if (!scenario) return ctx.reply('Сценарий не найден.');
-
+// --- Обработка выбора меню ---
+bot.hears(['Адвент-календарь', 'Истории', 'Наши проекты', 'Ежемесячное пожертвование', 'О нас', 'Контакты'], async (ctx) => {
   const userId = ctx.from.id;
   const chatId = ctx.chat.id;
+  const menuName = ctx.message.text;
 
+  // Находим сценарий по имени пункта меню
+  const scenario = await Scenario.findOne({ name: menuName });
+  if (!scenario) return ctx.reply('Диалог для этого пункта пока недоступен.');
+
+  // Создаём или обновляем прогресс пользователя
   await UserProgress.findOneAndUpdate(
     { userId, chatId },
     { currentScenario: scenario._id, currentStep: 0 },
     { upsert: true }
   );
 
-  ctx.reply(`🗺 Вы начали сценарий: ${scenario.name}`);
-  ctx.reply(`Шаг 1: ${scenario.steps[0]}`);
+  // Отправляем первый шаг сценария
+  ctx.reply(`🗺 Вы начали: ${scenario.name}`);
+  if (scenario.steps.length > 0) {
+    ctx.reply(`Шаг 1: ${scenario.steps[0]}`);
+  }
 });
 
 // --- Обработка текста пользователя ---
@@ -83,8 +72,9 @@ bot.on('text', async (ctx) => {
   const userId = ctx.from.id;
   const chatId = ctx.chat.id;
 
-  // Игнорируем текст кнопки "Меню" (его обрабатывает bot.hears)
-  if (ctx.message.text === '📋 Меню') return;
+  // Игнорируем нажатия на кнопки меню (они обрабатываются выше)
+  const menuItems = ['Адвент-календарь', 'Истории', 'Наши проекты', 'Ежемесячное пожертвование', 'О нас', 'Контакты'];
+  if (menuItems.includes(ctx.message.text)) return;
 
   const progress = await UserProgress.findOne({ userId, chatId }).populate('currentScenario');
   if (!progress || !progress.currentScenario) return;
@@ -106,7 +96,7 @@ bot.on('text', async (ctx) => {
       { userId, chatId },
       { currentScenario: null, currentStep: 0 }
     );
-    ctx.reply('🎉 Сценарий завершён!');
+    ctx.reply('🎉 Диалог завершён! Вы можете выбрать другой пункт меню.');
   }
 });
 
