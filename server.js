@@ -1,17 +1,11 @@
 require('dotenv').config();
 const express = require('express');
-const mongoose = require('mongoose');
 const bot = require('./bot');
 const Subscriber = require('./models/Subscriber');
 const Scenario = require('./models/Scenario');
 
 const app = express();
 app.use(express.json());
-
-// --- Подключение MongoDB ---
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ MongoDB connected'))
-  .catch(err => console.error('❌ MongoDB connection error:', err));
 
 // --- Главная страница админки ---
 app.get('/admin', (req, res) => {
@@ -31,7 +25,7 @@ app.get('/admin/subscribers', async (req, res) => {
   res.json(subs);
 });
 
-// --- Примитивная аналитика ---
+// --- Статистика ---
 app.get('/admin/stats', async (req, res) => {
   const count = await Subscriber.countDocuments();
   res.json({ totalSubscribers: count });
@@ -48,14 +42,14 @@ app.post('/admin/scenarios', async (req, res) => {
   res.json(scenario);
 });
 
-// --- Запуск бота ---
-bot.launch().then(() => console.log('🤖 Bot started'));
+// --- Webhook для бота ---
+app.use(bot.webhookCallback('/bot')); // путь webhook: https://bot-admin.gaoordi.ru/bot
 
-// --- Сервер ---
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🌍 Admin panel running at http://localhost:${PORT}`));
-
-// --- Редирект с главной страницы на /admin ---
-app.get('/', (req, res) => {
-  res.redirect('/admin');
+app.listen(PORT, () => {
+  console.log(`🌍 Admin panel running at http://localhost:${PORT}`);
+  console.log(`🤖 Webhook path: /bot`);
 });
+
+// --- Редирект с главной страницы ---
+app.get('/', (req, res) => res.redirect('/admin'));
