@@ -15,32 +15,48 @@ mongoose.connect(process.env.MONGO_URI)
 
 // --- /start ---
 bot.start(async (ctx) => {
-  const { id: userId, username } = ctx.from;
+  const { id: userId, username, first_name } = ctx.from;
   const chatId = ctx.chat.id;
 
   // Сохраняем подписчика
   await Subscriber.findOneAndUpdate(
-    { userId, chatId },
-    { userId, chatId, username, joinedAt: new Date() },
+    { chatId },
+    { userId, chatId, username },
     { upsert: true }
   );
 
-  // Создаём или обновляем прогресс пользователя в этом чате
+  // Создаём или обновляем прогресс пользователя
   await UserProgress.findOneAndUpdate(
     { userId, chatId },
-    { userId, chatId, currentStep: 0, currentScenario: null },
+    { userId, chatId },
     { upsert: true }
   );
 
-  // Приветственное сообщение
-  await ctx.reply(`👋 Привет, ${username || 'друг'}! Рад видеть тебя.`);
+  // Приветственное сообщение с кнопкой меню
+  await ctx.reply(
+    `👋 Привет, ${first_name}!\nДобро пожаловать в наш бот!`,
+    Markup.keyboard([
+      ['📋 Меню']
+    ])
+    .resize()
+  );
 
-  // Отправляем кнопки для выбора сценария
+  // Показываем сценарии
+  showScenarios(ctx);
+});
+
+// --- Функция показа сценариев ---
+async function showScenarios(ctx) {
   const scenarios = await Scenario.find();
   if (scenarios.length === 0) return ctx.reply('Сценариев пока нет.');
 
   const buttons = scenarios.map(s => [Markup.button.callback(s.name, `scenario_${s._id}`)]);
   ctx.reply('Выберите сценарий:', Markup.inlineKeyboard(buttons));
+}
+
+// --- Обработка кнопки "Меню" ---
+bot.hears('📋 Меню', async (ctx) => {
+  await showScenarios(ctx);
 });
 
 // --- Выбор сценария ---
@@ -66,6 +82,9 @@ bot.action(/scenario_(.+)/, async (ctx) => {
 bot.on('text', async (ctx) => {
   const userId = ctx.from.id;
   const chatId = ctx.chat.id;
+
+  // Игнорируем текст кнопки "Меню" (его обрабатывает bot.hears)
+  if (ctx.message.text === '📋 Меню') return;
 
   const progress = await UserProgress.findOne({ userId, chatId }).populate('currentScenario');
   if (!progress || !progress.currentScenario) return;
