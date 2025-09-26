@@ -7,7 +7,12 @@ const Scenario = require('./models/Scenario');
 const app = express();
 app.use(express.json());
 
-// --- Главная страница админки ---
+// --- Главная страница (корень) ---
+app.get('/', (req, res) => {
+  res.send('<h1>Бот-админка работает! 🚀</h1><a href="/admin">Перейти в админку</a>');
+});
+
+// --- Админка ---
 app.get('/admin', (req, res) => {
   res.send(`
     <h1>Админ-панель бота</h1>
@@ -50,10 +55,5 @@ const PORT = process.env.PORT || 3000;
 const HOST = '0.0.0.0';
 
 app.listen(PORT, HOST, () => {
-  console.log(`🌍 Admin panel: http://${HOST}:${PORT}`);
-});
-
-// --- Редирект с главной страницы на /admin ---
-app.get('/', (req, res) => {
-  res.redirect('/admin');
+  console.log(`🌍 Admin panel running at http://${HOST}:${PORT}`);
 });
