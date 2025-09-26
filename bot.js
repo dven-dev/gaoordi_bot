@@ -8,7 +8,7 @@ const UserProgress = require('./models/UserProgress');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// --- Подключение MongoDB ---
+// Подключение MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB connected'))
   .catch(err => console.error('❌ MongoDB connection error:', err));
@@ -18,25 +18,29 @@ bot.start(async (ctx) => {
   const { id: userId, username } = ctx.from;
   const chatId = ctx.chat.id;
 
-  // Обновляем или создаём подписчика
+  // Сохраняем подписчика
   await Subscriber.findOneAndUpdate(
     { userId, chatId },
-    { userId, chatId, username },
-    { upsert: true, new: true }
+    { userId, chatId, username, joinedAt: new Date() },
+    { upsert: true }
   );
 
-  // Обновляем прогресс пользователя, если ещё нет
+  // Создаём или обновляем прогресс пользователя в этом чате
   await UserProgress.findOneAndUpdate(
     { userId, chatId },
-    { userId, chatId },
-    { upsert: true, new: true }
+    { userId, chatId, currentStep: 0, currentScenario: null },
+    { upsert: true }
   );
 
+  // Приветственное сообщение
+  await ctx.reply(`👋 Привет, ${username || 'друг'}! Рад видеть тебя.`);
+
+  // Отправляем кнопки для выбора сценария
   const scenarios = await Scenario.find();
   if (scenarios.length === 0) return ctx.reply('Сценариев пока нет.');
 
   const buttons = scenarios.map(s => [Markup.button.callback(s.name, `scenario_${s._id}`)]);
-  ctx.reply('👋 Выберите сценарий:', Markup.inlineKeyboard(buttons));
+  ctx.reply('Выберите сценарий:', Markup.inlineKeyboard(buttons));
 });
 
 // --- Выбор сценария ---
@@ -51,7 +55,7 @@ bot.action(/scenario_(.+)/, async (ctx) => {
   await UserProgress.findOneAndUpdate(
     { userId, chatId },
     { currentScenario: scenario._id, currentStep: 0 },
-    { upsert: true, new: true }
+    { upsert: true }
   );
 
   ctx.reply(`🗺 Вы начали сценарий: ${scenario.name}`);
