@@ -1,9 +1,14 @@
 const { Markup } = require('telegraf');
 
 module.exports = (bot) => {
-  bot.hears('Контакты', async (ctx) => {
-    await ctx.reply(
-      `📞 Контакты ГАООРДИ:\n\nEmail: info@gaoordi.ru\nТелефон: +7 (812) 123-45-67`
-    );
+  const keyboardText = 'Контакты';
+  const command = 'contacts';
+
+  bot.command(command, async (ctx) => {
+    await ctx.reply('Наши контакты: телефон, e-mail и адрес.');
+  });
+
+  bot.hears(keyboardText, async (ctx) => {
+    await ctx.reply('Наши контакты: телефон, e-mail и адрес.');
   });
 };

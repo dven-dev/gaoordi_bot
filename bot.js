@@ -42,9 +42,8 @@ bot.start(async (ctx) => {
   // приветственное сообщение
   await ctx.reply('Добро пожаловать в бота ГАООРДИ!');
 
-  // меню
+  // встроенное меню слева (команды)
   await bot.telegram.setMyCommands([
-    { command: 'menu', description: 'Главное меню' },
     { command: 'advent', description: 'Адвент-календарь' },
     { command: 'stories', description: 'Истории' },
     { command: 'projects', description: 'Наши проекты' },
@@ -63,21 +62,7 @@ bot.start(async (ctx) => {
     ['Контакты']
   ]).resize();
 
-  await ctx.reply('Выберите пункт меню ниже:', mainKeyboard);
-});
-
-// --- /menu ---
-bot.command('menu', async (ctx) => {
-  const mainKeyboard = Markup.keyboard([
-    ['Адвент-календарь'],
-    ['Истории'],
-    ['Наши проекты'],
-    ['Ежемесячное пожертвование'],
-    ['О нас'],
-    ['Контакты']
-  ]).resize();
-
-  await ctx.reply('Главное меню открыто. Выберите пункт ниже:', mainKeyboard);
+  await ctx.reply('Выберите пункт меню:', mainKeyboard);
 });
 
 // подключаем сценарии

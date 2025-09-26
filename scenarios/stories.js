@@ -1,9 +1,16 @@
 const { Markup } = require('telegraf');
 
 module.exports = (bot) => {
-  bot.hears('Истории', async (ctx) => {
-    await ctx.reply(
-      `Истории подопечных...`
-    );
+  const keyboardText = 'Истории';
+  const command = 'stories';
+
+  bot.command(command, async (ctx) => {
+    await ctx.reply('Здесь будут наши истории.');
+  });
+
+  bot.hears(keyboardText, async (ctx) => {
+    await ctx.reply('Здесь будут наши истории.');
   });
 };
+
+
