@@ -8,6 +8,11 @@ const Scenario = require('./models/Scenario');
 const app = express();
 app.use(express.json());
 
+// --- Подключение MongoDB ---
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('✅ MongoDB connected'))
+  .catch(err => console.error('❌ MongoDB connection error:', err));
+
 // --- Главная страница админки ---
 app.get('/admin', (req, res) => {
   res.send(`
@@ -22,74 +27,35 @@ app.get('/admin', (req, res) => {
 
 // --- Подписчики ---
 app.get('/admin/subscribers', async (req, res) => {
-  try {
-    const subs = await Subscriber.find();
-    res.json(subs);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const subs = await Subscriber.find();
+  res.json(subs);
 });
 
 // --- Примитивная аналитика ---
 app.get('/admin/stats', async (req, res) => {
-  try {
-    const count = await Subscriber.countDocuments();
-    res.json({ totalSubscribers: count });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const count = await Subscriber.countDocuments();
+  res.json({ totalSubscribers: count });
 });
 
 // --- Сценарии ---
 app.get('/admin/scenarios', async (req, res) => {
-  try {
-    const scenarios = await Scenario.find();
-    res.json(scenarios);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  res.json(await Scenario.find());
 });
 
 app.post('/admin/scenarios', async (req, res) => {
-  try {
-    const scenario = new Scenario(req.body);
-    await scenario.save();
-    res.json(scenario);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const scenario = new Scenario(req.body);
+  await scenario.save();
+  res.json(scenario);
 });
+
+// --- Запуск бота ---
+bot.launch().then(() => console.log('🤖 Bot started'));
+
+// --- Сервер ---
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🌍 Admin panel running at http://localhost:${PORT}`));
 
 // --- Редирект с главной страницы на /admin ---
 app.get('/', (req, res) => {
   res.redirect('/admin');
 });
-
-// --- Настройка порта и хоста ---
-const PORT = process.env.PORT || 3000;
-const HOST = '0.0.0.0';
-
-// --- Подключение MongoDB и запуск сервера с ботом ---
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log('✅ MongoDB connected');
-
-    // Запускаем Telegram-бота
-    if (!process.env.BOT_TOKEN) {
-      console.error('❌ BOT_TOKEN is missing!');
-      process.exit(1);
-    }
-
-    bot.launch()
-      .then(() => console.log('🤖 Bot started'))
-      .catch(err => console.error('❌ Bot launch error:', err));
-
-    // Запуск Express
-    app.listen(PORT, HOST, () => {
-      console.log(`🌍 Admin panel running at http://${HOST}:${PORT}`);
-    });
-  })
-  .catch(err => {
-    console.error('❌ MongoDB connection error:', err);
-    process.exit(1);
-  });
