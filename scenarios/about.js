@@ -1,7 +1,7 @@
 const { Markup } = require('telegraf');
 
 module.exports = (bot) => {
-  const keyboardText = 'О нас ℹ️';
+  const keyboardText = 'О нас';
   const command = 'about';
 
   const sendAboutMessage = async (ctx) => {
